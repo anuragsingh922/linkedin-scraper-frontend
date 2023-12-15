@@ -1,0 +1,37 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+* {
+  font-family: "Inter", sans-serif !important;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Webkit-based browsers (e.g., Chrome, Safari) */
+/* Customizing the Y-axis scrollbar */
+::-webkit-scrollbar {
+  width: 5px; /* width of the scrollbar */
+}
+
+/* Handle for Y-axis */
+::-webkit-scrollbar-thumb {
+  background: #333; /* background color of the thumb (scrollable area) */
+  border-radius: 5px; /* rounded corners for the thumb */
+}
+
+/* Customizing the X-axis scrollbar */
+::-webkit-scrollbar:horizontal {
+  height: 5px; /* height of the scrollbar */
+}
+
+/* Handle for X-axis */
+::-webkit-scrollbar-thumb:horizontal {
+  background: #333; /* background color of the thumb (scrollable area) */
+  border-radius: 5px; /* rounded corners for the thumb */
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin; /* width of the scrollbar on Firefox */
+  scrollbar-color: #333 #333; /* thumb and track colors */
+}
