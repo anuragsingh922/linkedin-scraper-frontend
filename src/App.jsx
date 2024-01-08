@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import "./App.css";
 import { Toaster } from "react-hot-toast";
 import Homepage from "./pages/Homepage";
+import JOB from "./pages/Job_Home";
 import Login from "./pages/User/Login";
 import Register from "./pages/User/Register";
 import { useEffect, useMemo, useState } from "react";
@@ -57,6 +58,8 @@ function App() {
       </Box>
     );
 
+    
+
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />
@@ -64,10 +67,11 @@ function App() {
         <CssBaseline />
         <Routes>
           <Route exact path="/" element={<Sidebar />}>
-            <Route exact path="/" element={<Homepage />} />
+            <Route exact path="/" element={<JOB />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/home" element={<Home />} />
+            <Route path="/job" element={<JOB />} />
+            <Route path="/Home" element={<Home />} />
             <Route path="/connection-request" element={<ConnectionRequest />} />
             <Route path="/send-emails" element={<SendEmails />} />
           </Route>

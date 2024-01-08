@@ -13,15 +13,15 @@ const LoginPage = ({ onLogin }) => {
 
   const handleLogin = async () => {
     try {
-      const { data } = await AxiosClient.post("api/user/login", {
-        email,
-        password,
-      });
-      setUser(data);
-      setIsSignedIn(true);
+      // const { data } = await AxiosClient.post("api/user/login", {
+      //   email,
+      //   password,
+      // });
+      // setUser(data);
+      // setIsSignedIn(true);
 
-      localStorage.setItem("accessToken", data.token);
-      nav("/home");
+      // localStorage.setItem("accessToken", data.token);
+      nav("/job");
       toast.success("Login Successfull");
     } catch (error) {
       console.log(error);
@@ -30,7 +30,7 @@ const LoginPage = ({ onLogin }) => {
   };
 
   useEffect(() => {
-    if (isSignedIn) nav("/home");
+    if (isSignedIn) nav("/job");
   }, [nav]);
 
   return (

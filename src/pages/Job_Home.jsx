@@ -18,10 +18,12 @@ import ReactJson from "react-json-view";
 import AxiosClient from "../config/AxiosClient";
 import { useZustandStore } from "../store/store";
 
-const Home = () => {
+const Job = () => {
   const [problemStatement, setProblemStatement] = useState();
   const [productDes, setProductDes] = useState();
   const [jobtitle, setjobtitle] = useState();
+  const [jobposition, setjobposition] = useState();
+  const [joblisting, setjoblisting] = useState();
   const [loading, setLoading] = useState(false);
   const [emailsfound, setEmailsfound] = useState(false);
   const [profileDeciderData, setProfileDeciderData] = useState();
@@ -48,7 +50,8 @@ const Home = () => {
   const [companySize, setCompanySize] = useState("None");
   const [locationDisplay, setLocationDisplay] = useState(false);
   const [locationContent, setLocationContent] = useState();
-  const [scrappingData, setScrappingData] = useState();
+  const [jobsData, setjobsData] = useState();
+  const [profiles, setprofiles] = useState();
   const [loadingMessage, setLoadingMessage] = useState();
   const [messageData, setMessageData] = useState();
   const [characterCount, setCharacterCount] = useState(0);
@@ -84,8 +87,8 @@ const Home = () => {
     try {
       const { data } = await ApiAxiosClient.post(`/v1/target_profile_decider`, {
         prod_statement: problemStatement,
-        problemdec : productDes,
-        jobtitle : jobtitle
+        problemdec: productDes,
+        jobtitle: jobtitle,
       });
       setProfileDeciderData(data.result);
       setTargetPresonaDisplay(true);
@@ -146,7 +149,7 @@ const Home = () => {
       const response = await ApiAxiosClient.post(`/v1/get_emails`, {
         profiles: data,
       });
-      if(!response.status === "No emails found"){
+      if (response.status !== "No emails found") {
         setEmailsfound(true);
       }
       if (response.data.status === "No emails found") {
@@ -187,18 +190,16 @@ const Home = () => {
     }
   };
 
-  const callScrapingCompanies = async () => {
-    setLoadingMessage("Fetching Profiles...");
+  const callScrapingJobs = async () => {
+    setLoadingMessage("Fetching Jobs Openings...");
     setLoading(true);
     try {
-      const { data } = await ApiAxiosClient.post(`/v1/company_scraper`, {
-        session_cookie: cookieContent,
+      console.log(joblisting);
+      const data = await ApiAxiosClient.post(`/v1/jobs`, {
         location: locationContent,
-        company_size: companySize.toLowerCase(),
-        target_persona: targetPersonaOutput,
-        no_of_profiles: peopleToTargetContent,
-        job_field: jobtitle,
-        no_of_companies : no_of_companies
+        job_title: jobtitle,
+        joblisting: joblisting,
+        jobposition: jobposition,
       });
       if (data.error) {
         setLoading(false);
@@ -206,11 +207,49 @@ const Home = () => {
         return;
       }
       if (typeof data == "object") {
-        setScrappingData(data);
+        setjobsData(data.data.companies);
         console.log("Found");
       } //Type
       else {
-        setScrappingData([
+        setjobsData([
+          {
+            error: "No Profile Found",
+          },
+        ]);
+      }
+      console.log(typeof data);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error("Error, Please try again");
+    }
+  };
+  const callscrapcompany = async () => {
+    setLoadingMessage("Fetching Jobs Openings...");
+    setLoading(true);
+    try {
+      console.log(joblisting);
+      const data = await ApiAxiosClient.post(`/v1/company`, {
+        session_cookie: cookieContent,
+        location: locationContent,
+        job_title: jobtitle,
+        joblisting: joblisting,
+        jobposition: jobposition,
+        job_array : jobsData,
+        target_persona : targetPresonaContent,
+        companysize : companySize
+      });
+      if (data.error) {
+        setLoading(false);
+        toast.error(data.error);
+        return;
+      }
+      if (typeof data == "object") {
+        setprofiles(data.data);
+        console.log("Found");
+      } //Type
+      else {
+        setjobsData([
           {
             error: "No Profile Found",
           },
@@ -238,7 +277,42 @@ const Home = () => {
       );
       setMessageData(data.result);
       setCharacterCount(data.result.length);
-      await callEmail(scrappingData);
+      await callEmail(jobsData);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error("Error, Please try again");
+    }
+  };
+
+
+const callConnection = async () => {
+    setLoadingMessage("Sending Connection Request...");
+    // const linkedin_url = jobsData.map((item) => item.profileUrl);
+    let linkedin_url = [];
+    for (let i = 0; i < profiles.length; i++) {
+      console.log("Includes  :  " + profiles[i]["ProfileUrl"].includes("null"));
+      if (profiles[i]["ProfileUrl"]) {
+        linkedin_url.push(
+          profiles[i]["ProfileUrl"]
+            .replace(`"`, ``)
+            .replace(`"`, ``)
+            .replace(`"`, ``)
+            .replace(`"`, ``)
+            .replace("\\", ``)
+        );
+        console.log("Ele  :  " + linkedin_url[i]);
+      }
+    }
+    console.log(linkedin_url);
+    setLoading(true);
+    try {
+      await ApiAxiosClient.post(`/v1/send_connection`, {
+        session_cookie: cookieContent,
+        message: messageData ? messageData : null,
+        linkedin_url,
+      });
+      toast.success("Connection Requests sent");
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -248,13 +322,13 @@ const Home = () => {
 
   const sendConnectionRqst = async () => {
     setLoadingMessage("Sending Connection Request...");
-    // const linkedin_url = scrappingData.map((item) => item.profileUrl);
+    // const linkedin_url = jobsData.map((item) => item.profileUrl);
     let linkedin_url = [];
-    for (let i = 0; i < scrappingData.length; i++) {
-      console.log("Includes  :  "+scrappingData[i]["ProfileUrl"].includes("null"));
-      if (!scrappingData[i]["ProfileUrl"].includes("null")) {
+    for (let i = 0; i < profiles.length; i++) {
+      console.log("Includes  :  " + profiles[i]["ProfileUrl"].includes("null"));
+      if (profiles[i]["ProfileUrl"]) {
         linkedin_url.push(
-          scrappingData[i]["ProfileUrl"]
+          profiles[i]["ProfileUrl"]
             .replace(`"`, ``)
             .replace(`"`, ``)
             .replace(`"`, ``)
@@ -271,6 +345,26 @@ const Home = () => {
         session_cookie: cookieContent,
         message: messageData,
         linkedin_url,
+      });
+      toast.success("Connection Requests sent");
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error("Error, Please try again");
+    }
+  };
+
+
+  const sendConnectionRqstJob = async () => {
+    setLoadingMessage("Sending Connection Request...");
+    setLoading(true);
+    try {
+      await ApiAxiosClient.post(`/v1/send_connection_with_message`, {
+        session_cookie: cookieContent,
+        profiles : profiles,
+        problemStatement : problemStatement,
+        productDes : productDes,
+        changes: "No changes",
       });
       toast.success("Connection Requests sent");
       setLoading(false);
@@ -394,11 +488,11 @@ const Home = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
 
     // Create headers from the keys of the first object
-    const headers = Object.keys(scrappingData[0]);
+    const headers = Object.keys(jobsData[0]);
     csvContent += headers.join(",") + "\n";
 
     // Create rows of data
-    scrappingData.forEach((item) => {
+    jobsData.forEach((item) => {
       const row = headers.map((header) => item[header]);
       csvContent += row.join(",") + "\n";
     });
@@ -481,7 +575,7 @@ const Home = () => {
     setCompanySize("None");
     setLocationDisplay(false);
     setLocationContent(undefined);
-    setScrappingData(undefined);
+    setjobsData(undefined);
     setLoadingMessage(undefined);
     setMessageData(undefined);
     setCharacterCount(0);
@@ -504,7 +598,13 @@ const Home = () => {
       const { data } = await ApiAxiosClient.post(`/v1/option`, {
         message: connectPeopleContent,
       });
-      setYesNoContent(data.response);
+      console.log(data);
+      if(data.response==="Yes" || data.response==="yes"){
+        setYesNoContent(data.response);
+      }
+      else{
+        setYesNoContent();
+      }
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -519,14 +619,50 @@ const Home = () => {
     setLoading(true);
     try {
       const { data } = await ApiAxiosClient.post(`/v1/option`, {
-        message: connectPeopleContent,
+        message: connectionMessageDecisionContent? connectionMessageDecisionContent: connectPeopleContent,
       });
-      setYesNoMessageConnectionContent(data.response);
 
+      console.log(data.response);
+      
       if (data.response.toLowerCase() === "yes") {
         setLoading(false);
-        await callConnectionMessage();
+        setYesNoMessageConnectionContent();
+        await sendConnectionRqstJob();
       } else if (data.response.toLowerCase() === "no") {
+        setLoading(false);
+        setYesNoMessageConnectionContent();
+        console.log("Calling Connection");
+        await callConnection();
+        console.log("Called Connection");
+      }
+    } catch (error) {
+      setLoading(false);
+      toast.error("Error, Please try again");
+    }
+  };
+
+
+  const callYesNoMessageForemail = async () => {
+    setLoadingMessage("Fetching Data...");
+    setLoading(true);
+    try {
+      const { data } = await ApiAxiosClient.post(`/v1/option`, {
+        message: connectionMessageDecisionContent? connectionMessageDecisionContent: connectPeopleContent,
+      });
+
+      console.log(data.response);
+      
+      if (data.response.toLowerCase() === "yes") {
+        setLoading(false);
+        setYesNoMessageConnectionContent();
+        await callEmail(jobsData);
+        // await sendEmail();
+      } else if (data.response.toLowerCase() === "no") {
+        setLoading(false);
+        setYesNoMessageConnectionContent();
+        console.log("Calling Connection");
+        await callConnection();
+        console.log("Called Connection");
       }
     } catch (error) {
       setLoading(false);
@@ -585,7 +721,7 @@ const Home = () => {
           // disabled={profileDeciderData ? true : false}
         />
         <Typography variant="h6" sx={{ mt: 2 }}>
-          Problem Description{" "}
+          Product Description
         </Typography>
         <TextField
           size="small"
@@ -597,7 +733,7 @@ const Home = () => {
           // disabled={profileDeciderData ? true : false}
         />
         <Typography variant="h6" sx={{ mt: 2 }}>
-          Job Title{" "}
+          Job Title
         </Typography>
         <TextField
           size="small"
@@ -607,15 +743,18 @@ const Home = () => {
             setjobtitle(e.target.value);
           }}
           // disabled={profileDeciderData ? true : false}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              if (!productDes ||!problemStatement || !jobtitle) {
-                toast.error("Please enter problem statement and description");
-                return;
-              }
-              callTargetProfileDecider();
-            }
+        />
+        <Typography variant="h6" sx={{ mt: 2 }}>
+          Job Positions
+        </Typography>
+        <TextField
+          size="small"
+          sx={{ mt: 1, width: "100%" }}
+          value={jobposition}
+          onChange={(e) => {
+            setjobposition(e.target.value);
           }}
+          // disabled={profileDeciderData ? true : false}
         />
         {profileDeciderData && (
           <Box sx={{ mt: 2 }}>
@@ -626,65 +765,46 @@ const Home = () => {
             />
           </Box>
         )}
-
-        {targetPresonaDisplay && (
-          <>
-            <Typography variant="h6" sx={{ mt: 2 }}>
-              Choose target persona or enter your own:
-            </Typography>
-            <TextField
-              size="small"
-              sx={{ mt: 1, width: "100%" }}
-              value={targetPresonaContent}
-              onChange={(e) => {
-                settargetPresonaContent(e.target.value);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  if (!problemStatement  || !productDes || !profileDeciderData || !jobtitle) {
-                    toast.error("Please enter all the details and retry");
-                    return;
-                  }
-                  callTargetPersonaDecider();
+        <>
+          <Typography variant="h6" sx={{ mt: 2 }}>
+            Enter Location
+          </Typography>
+          <TextField
+            size="small"
+            sx={{ mt: 1, width: "100%" }}
+            value={locationContent}
+            onChange={(e) => {
+              setLocationContent(e.target.value);
+            }}
+            // disabled={jobsData ? true : false}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (
+                  !problemStatement ||
+                  !productDes ||
+                  !jobtitle ||
+                  !jobposition
+                ) {
+                  toast.error("Please enter all the details and retry");
+                  return;
                 }
-              }}
-              // disabled={targetPersonaOutput ? true : false}
-            />
-            {targetPersonaOutput && (
-              <Typography variant="h6" sx={{ mt: 1 }}>
-                {targetPersonaOutput}
-              </Typography>
-            )}
-          </>
-        )}
+                setPeopleToTargetDisplay(true);
+              }
+            }}
+          />
+        </>
+
         {peopleToTargetDisplay && (
           <>
             <Typography variant="h6" sx={{ mt: 2 }}>
-              Got it! How many Company would you like to target?
+              Got it! How many job listing?
             </Typography>
             <TextField
               size="small"
               sx={{ mt: 1, width: "100%" }}
-              value={no_of_companies}
+              value={joblisting}
               onChange={(e) => {
-                setno_of_companies(e.target.value);
-              }}
-              type="number"
-              // disabled={outReachMethodsDisplay}
-            />
-          </>
-        )}
-        {peopleToTargetDisplay && (
-          <>
-            <Typography variant="h6" sx={{ mt: 2 }}>
-              Got it! How many people would you like to target per company?
-            </Typography>
-            <TextField
-              size="small"
-              sx={{ mt: 1, width: "100%" }}
-              value={peopleToTargetContent}
-              onChange={(e) => {
-                setPeopleToTargetContent(e.target.value);
+                setjoblisting(e.target.value);
               }}
               type="number"
               // disabled={outReachMethodsDisplay}
@@ -693,53 +813,180 @@ const Home = () => {
                   if (
                     !problemStatement ||
                     !productDes ||
-                    !profileDeciderData ||
-                    !targetPersonaOutput
+                    !jobtitle ||
+                    !jobposition ||
+                    !locationContent
                   ) {
                     toast.error("Please enter all the details and retry");
                     return;
                   }
-                  callNumberOfPeopleToTarget();
+                  callScrapingJobs();
                 }
               }}
             />
           </>
         )}
-        {outReachMethodsDisplay && (
+
+        {jobsData && (
+          <Box sx={{ mt: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+              <Typography variant="h5" sx={{ mb: 2 }}>
+                Jobs
+              </Typography>
+            </Box>
+            {!jobsData &&
+              jobsData.map((item, i) => {
+                const cleanedData = Object.fromEntries(
+                  Object.entries(item).map(([key, value]) => [
+                    key,
+                    value
+                      .replace(/['"]+/g, "")
+                      .replace(`"`, ``)
+                      .replace(`\\`, ``)
+                      .replace(`\\`, ``)
+                      .replace(`\\`, ``)
+                      .replace(`\\`, ``)
+                      .replace(`]`, ``),
+                  ])
+                );
+
+                return (
+                  <Typography key={i}>
+                    {Object.entries(cleanedData).map(([key, value]) =>
+                      key !== "query" &&
+                      key !== "connectionDegree" &&
+                      key !== "timestamp" &&
+                      key !== "lastName" &&
+                      key !== "firstName" ? (
+                        <>
+                          <React.Fragment key={key}>
+                            <>
+                              {key === "Name" ? (
+                                <>
+                                  <hr />
+                                  <br />
+                                </>
+                              ) : null}
+                              {key.charAt(0).toUpperCase() +
+                                key.slice(1, key.length)}{" "}
+                              -{" "}
+                              {key === "ProfileUrl" ? (
+                                <a
+                                  href={value}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    background: "#121512",
+                                    color: "white",
+                                    textDecoration: "none",
+                                    padding: "5px 10px",
+                                    display: "inline-block",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  {value.replace("?", "")}
+                                </a>
+                              ) : (
+                                value
+                              )}
+                              <br />
+                            </>
+                          </React.Fragment>
+                          {key === "location" ? (
+                            <>
+                              <br />
+                            </>
+                          ) : null}
+                          {/* <hr /> */}
+                        </>
+                      ) : null
+                    )}
+                  </Typography>
+                );
+              })}
+            {jobsData ? (
+              <ReactJson
+                src={jobsData}
+                displayDataTypes={false}
+                theme="monokai"
+              />
+            ) : null}
+          </Box>
+        )}
+        {jobsData && (
+          <Box sx={{ mt: 2 }}>
+            <Button variant="contained" onClick={convertJSONToCSV}>
+              Download (Jobs)
+            </Button>
+          </Box>
+        )}
+
+        {jobsData && (
           <>
             <Typography variant="h6" sx={{ mt: 2 }}>
-              Please choose one of the following outreach methods:
+              Profiles to Target
             </Typography>
-            <List component="ol">
-              {data.map((item, i) => (
-                <ListItem key={i}>
-                  <ListItemText primary={`${i + 1}. ${item}`} />
-                </ListItem>
-              ))}
-            </List>
-            <FormControl sx={{ mt: 2 }}>
-              <Typography variant="h6">Select Outreach Method:</Typography>
-              <Select
-                labelId="outreach-method-label"
-                id="outreach-method-select"
-                value={selectedMethod}
-                onChange={handleMethodChange}
-                size="small"
-                sx={{ mt: 1 }}
-                // disabled={selectedMethod !== "None" ? true : false}
-              >
-                <MenuItem value="None">None</MenuItem>
-                <MenuItem value="LinkedIn Only">LinkedIn Only</MenuItem>
-                <MenuItem value="LinkedIn + Email">LinkedIn + Email</MenuItem>
-                <MenuItem value="LinkedIn + Email + Phone">
-                  LinkedIn + Email + Phone
-                </MenuItem>
-                <MenuItem value="Email Only">Email Only</MenuItem>
-                <MenuItem value="Email + Phone">Email + Phone</MenuItem>
-              </Select>
-            </FormControl>
+            <TextField
+              size="small"
+              sx={{ mt: 1, width: "100%" }}
+              value={targetPresonaContent}
+              onChange={(e) => {
+                settargetPresonaContent(e.target.value);
+              }}
+              // disabled={yesNoContent ? true : false}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  if (
+                    !problemStatement ||
+                    !productDes ||
+                    !locationContent ||
+                    !jobtitle ||
+                    !targetPresonaContent
+                  ) {
+                    toast.error("Please enter all the details and retry");
+                    return;
+                  }
+                  callTargetPersonaDecider();
+                }
+              }}
+            />
           </>
         )}
+
+        {jobsData && (
+          <>
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              Profiles to Target - {targetPersonaOutput ? targetPersonaOutput : "Please fill the detail and press enter."}
+            </Typography>
+          </>
+        )}
+
+        {jobsData && (
+          <FormControl sx={{ mt: 2 }}>
+            <Typography variant="h6">Select Company Size</Typography>
+            <Select
+              value={companySize}
+              onChange={(e) => {
+                setCompanySize(e.target.value);
+                setLocationDisplay(true);
+                if (e.target.value === "None") {
+                  setcookieDisplay(false);
+                } else {
+                  setcookieDisplay(true);
+                }
+              }}
+              size="small"
+              sx={{ mt: 1 }}
+              // disabled={companySize !== "None" ? true : false}
+            >
+              <MenuItem value="None">None</MenuItem>
+              <MenuItem value="Small">Small</MenuItem>
+              <MenuItem value="Medium">Medium</MenuItem>
+              <MenuItem value="Large">Large</MenuItem>
+            </Select>
+          </FormControl>
+        )}
+
         {cookieDisplay && (
           <>
             <Typography variant="h6" sx={{ mt: 2 }}>
@@ -759,137 +1006,117 @@ const Home = () => {
                   if (
                     !problemStatement ||
                     !productDes ||
-                    !profileDeciderData ||
-                    !peopleToTargetContent
+                    !jobtitle ||
+                    !jobposition ||
+                    !cookieContent
                   ) {
                     toast.error("Please enter all the details and retry");
                     return;
                   }
-                  setIndustriesButtonClicked(true);
-                }
-              }}
-            />
-          </>
-        )}
-        {industriesButtonClicked && (
-          <FormControl sx={{ mt: 2 }}>
-            <Typography variant="h6">Select Company Size</Typography>
-            <Select
-              value={companySize}
-              onChange={(e) => {
-                setCompanySize(e.target.value);
-                setLocationDisplay(true);
-              }}
-              size="small"
-              sx={{ mt: 1 }}
-              // disabled={companySize !== "None" ? true : false}
-            >
-              <MenuItem value="None">None</MenuItem>
-              <MenuItem value="Small">Small</MenuItem>
-              <MenuItem value="Medium">Medium</MenuItem>
-              <MenuItem value="Large">Large</MenuItem>
-            </Select>
-          </FormControl>
-        )}
-
-        {locationDisplay && (
-          <>
-            <Typography variant="h6" sx={{ mt: 2 }}>
-              Enter Location
-            </Typography>
-            <TextField
-              size="small"
-              sx={{ mt: 1, width: "100%" }}
-              value={locationContent}
-              onChange={(e) => {
-                setLocationContent(e.target.value);
-              }}
-              // disabled={scrappingData ? true : false}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  if (
-                    !problemStatement ||
-                    !productDes ||
-                    !profileDeciderData ||
-                    !peopleToTargetContent ||
-                    !cookieContent ||
-                    !locationContent||
-                    !jobtitle
-                  ) {
-                    toast.error("Please enter all the details and retry");
-                    return;
-                  }
-                  callScrapingCompanies();
+                  callscrapcompany();
                 }
               }}
             />
           </>
         )}
 
-        {scrappingData && (
+        {profiles && (
           <Box sx={{ mt: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Typography variant="h5" sx={{ mb: 2 }}>
                 Profiles
               </Typography>
             </Box>
-            {!scrappingData && scrappingData.map((item, i) => {
-              const cleanedData = Object.fromEntries(
-                Object.entries(item).map(([key, value]) => [
-                  key,
-                  value.replace(/['"]+/g, "").replace(`"` ,``).replace(`\\`,``).replace(`\\`,``).replace(`\\`,``).replace(`\\`,``).replace(`]`,``),
-                ])
-              );
+            {!profiles &&
+              profiles.map((item, i) => {
+                const cleanedData = Object.fromEntries(
+                  Object.entries(item).map(([key, value]) => [
+                    key,
+                    value
+                      .replace(/['"]+/g, "")
+                      .replace(`"`, ``)
+                      .replace(`\\`, ``)
+                      .replace(`\\`, ``)
+                      .replace(`\\`, ``)
+                      .replace(`\\`, ``)
+                      .replace(`]`, ``),
+                  ])
+                );
 
-              return (
-                <Typography key={i}>
-                  {Object.entries(cleanedData).map(([key, value]) =>
-                  (key!=="query" && key!=="connectionDegree" && key!=="timestamp" && key!=="lastName"  && key!=="firstName"?
-                  <>
-                    <React.Fragment key={key}><>
-                    {key==="Name"? <><hr /><br /></>:null}
-                      {key.charAt(0).toUpperCase() + key.slice(1, key.length) } - {" "}
-                      {key === "ProfileUrl" ? (
-                        <a
-                          href={value}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            background: "#121512",
-                            color: "white",
-                            textDecoration: "none",
-                            padding: "5px 10px",
-                            display: "inline-block",
-                            cursor: "pointer"
-                          }}
-                        >
-                          {value.replace("?","")}
-                        </a>
-                      ) : (
-                        value
-                      )}
-                      <br />
-                      </>
-                    </React.Fragment>
-                    {key==="location"? <><br /></>:null}
-                      {/* <hr /> */}
-                      </>
-                    :null
-                  )
-                  )}
-                </Typography>
-              );
-            })}
-            {scrappingData ? <ReactJson src={scrappingData} displayDataTypes={false} theme="monokai"/>:null}
+                return (
+                  <Typography key={i}>
+                    {Object.entries(cleanedData).map(([key, value]) =>
+                      key !== "query" &&
+                      key !== "connectionDegree" &&
+                      key !== "timestamp" &&
+                      key !== "lastName" &&
+                      key !== "firstName" ? (
+                        <>
+                          <React.Fragment key={key}>
+                            <>
+                              {key === "Name" ? (
+                                <>
+                                  <hr />
+                                  <br />
+                                </>
+                              ) : null}
+                              {key.charAt(0).toUpperCase() +
+                                key.slice(1, key.length)}{" "}
+                              -{" "}
+                              {key === "ProfileUrl" ? (
+                                <a
+                                  href={value}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    background: "#121512",
+                                    color: "white",
+                                    textDecoration: "none",
+                                    padding: "5px 10px",
+                                    display: "inline-block",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  {value.replace("?", "")}
+                                </a>
+                              ) : (
+                                value
+                              )}
+                              <br />
+                            </>
+                          </React.Fragment>
+                          {key === "location" ? (
+                            <>
+                              <br />
+                            </>
+                          ) : null}
+                          {/* <hr /> */}
+                        </>
+                      ) : null
+                    )}
+                  </Typography>
+                );
+              })}
+            {profiles ? (
+              <>
+              <ReactJson
+                src={profiles.map(({ commpanyUrl, companysize, description, ...rest }) => rest)}
+                displayDataTypes={false}
+                theme="monokai"
+              />
+              </>
+            ) : null}
           </Box>
         )}
-        {scrappingData && (
+
+        {profiles && (
           <Box sx={{ mt: 2 }}>
             <Button variant="contained" onClick={convertJSONToCSV}>
               Download (Profiles)
             </Button>
           </Box>
         )}
+
         {profileWithEmail?.length > 0 && (
           <Box sx={{ mt: 2 }}>
             <Button variant="contained" onClick={convertJSONToCSVProfile}>
@@ -898,7 +1125,7 @@ const Home = () => {
           </Box>
         )}
 
-        {scrappingData && (
+        {profiles && (
           <>
             <Typography variant="h6" sx={{ mt: 2 }}>
               Would you like to connect with these people
@@ -916,10 +1143,9 @@ const Home = () => {
                   if (
                     !problemStatement ||
                     !productDes ||
-                    !profileDeciderData ||
-                    !peopleToTargetContent ||
+                    !targetPresonaContent ||
                     !cookieContent ||
-                    !locationContent||
+                    !locationContent ||
                     !jobtitle
                   ) {
                     toast.error("Please enter all the details and retry");
@@ -949,10 +1175,10 @@ const Home = () => {
                   if (
                     !problemStatement ||
                     !productDes ||
-                    !profileDeciderData ||
-                    !peopleToTargetContent ||
+                    !targetPresonaContent ||
                     !cookieContent ||
-                    !locationContent
+                    !locationContent ||
+                    !jobtitle
                   ) {
                     toast.error("Please enter all the details and retry");
                     return;
@@ -964,7 +1190,40 @@ const Home = () => {
           </>
         )}
 
-        {messageData && (
+      {yesNoContent?.toLowerCase() === "yes" && (
+          <>
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              Would you like to send an email
+            </Typography>
+            <TextField
+              size="small"
+              sx={{ mt: 1, width: "100%" }}
+              value={connectionMessageDecisionContent}
+              onChange={(e) => {
+                setConnectionMessageDecisionContent(e.target.value);
+              }}
+              // disabled={yesNoMessageConnectionContent ? true : false}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  if (
+                    !problemStatement ||
+                    !productDes ||
+                    !targetPresonaContent ||
+                    !cookieContent ||
+                    !locationContent ||
+                    !jobtitle
+                  ) {
+                    toast.error("Please enter all the details and retry");
+                    return;
+                  }
+                  callYesNoMessageForemail();
+                }
+              }}
+            />
+          </>
+        )}
+
+        {emailsfound  && 1>2 && yesNoContent?.toLowerCase() === "yes" && (
           <>
             <Typography variant="h6" sx={{ mt: 2 }}>
               Auto Generated Connection Message
@@ -1001,14 +1260,14 @@ const Home = () => {
             <Button
               variant="contained"
               sx={{ mt: 2, px: 4 }}
-              onClick={sendConnectionRqst}
+              onClick={sendConnectionRqstJob}
               disabled={characterCount > 300}
             >
               Send
             </Button>
           </>
         )}
-        {generatedEmailSubject && generatedEmailContent && emailsfound && (
+        {generatedEmailSubject && 1>2  && generatedEmailContent && emailsfound && (
           <>
             <Box>
               <Typography variant="h6" sx={{ mt: 2 }}>
@@ -1076,4 +1335,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Job;
