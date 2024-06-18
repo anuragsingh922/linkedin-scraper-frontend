@@ -206,14 +206,14 @@ const SendEmails = () => {
               style={{ display: "none" }}
               id="file-input"
             />
-            <label htmlFor="file-input">
+            {!selectedFile ?<label htmlFor="file-input">
               <Button variant="contained" component="span">
                 Select CSV File
               </Button>
-            </label>
+            </label> : null}
             {selectedFile && (
               <Box>
-                Selected File: {selectedFile.name}
+                Selected File: <b>{selectedFile.name}</b>
                 <Button
                   variant="contained"
                   color="primary"

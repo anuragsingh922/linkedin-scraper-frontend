@@ -20,9 +20,12 @@ const LoginPage = ({ onLogin }) => {
       // setUser(data);
       // setIsSignedIn(true);
 
-      // localStorage.setItem("accessToken", data.token);
+      if(password==="12345678" && email==="a@gmail.com"){
+
+      localStorage.setItem("accessToken", email);
       nav("/job");
       toast.success("Login Successfull");
+    }
     } catch (error) {
       console.log(error);
       toast.error("Login failed");

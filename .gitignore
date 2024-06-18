@@ -25,4 +25,8 @@ yarn-error.log*
 .vercel
 
 
-/joshi
+.env
+.gitignore
+
+env
+gitignore

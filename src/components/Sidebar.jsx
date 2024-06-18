@@ -68,7 +68,7 @@ export default function Sidebar() {
   const { user, setUser, setIsSignedIn, isSignedIn } = useZustandStore();
   const { pathname } = useLocation();
   const handleDrawerOpen = () => {
-    setOpen(true);
+    setOpen(false);
   };
   const option = pathname.includes("request")
     ? "Send Connection Request"
@@ -160,12 +160,15 @@ export default function Sidebar() {
                   nav("/connection-request");
                 } else if (e.target.value.includes("Emails")) {
                   nav("/send-emails");
+                } else if (e.target.value.includes("Job")) {
+                  nav("/job");
                 } else {
                   nav("/home");
                 }
               }}
             >
               <MenuItem value={"Home"}>Home</MenuItem>
+              <MenuItem value={"Job"}>Job</MenuItem>
               <MenuItem value={"Send Connection Request"}>
                 Send Connection Request
               </MenuItem>

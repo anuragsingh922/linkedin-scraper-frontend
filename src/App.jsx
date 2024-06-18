@@ -20,6 +20,7 @@ import Sidebar from "./components/Sidebar";
 import Home from "./pages/Home";
 import ConnectionRequest from "./pages/ConnectionRequest";
 import SendEmails from "./pages/SendEmails";
+import SendEmailsJob from "./pages/SendEmailsJob";
 
 function App() {
   const { setUser, setIsSignedIn } = useZustandStore();
@@ -67,13 +68,13 @@ function App() {
         <CssBaseline />
         <Routes>
           <Route exact path="/" element={<Sidebar />}>
-            <Route exact path="/" element={<JOB />} />
+            <Route exact path="/" element={<Homepage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/job" element={<JOB />} />
             <Route path="/Home" element={<Home />} />
             <Route path="/connection-request" element={<ConnectionRequest />} />
-            <Route path="/send-emails" element={<SendEmails />} />
+            <Route path="/send-emails" element={<SendEmailsJob />} />
           </Route>
         </Routes>
       </ThemeProvider>

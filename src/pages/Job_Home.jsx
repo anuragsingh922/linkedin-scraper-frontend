@@ -200,6 +200,7 @@ const Job = () => {
         job_title: jobtitle,
         joblisting: joblisting,
         jobposition: jobposition,
+        cookie: cookieContent,
       });
       if (data.error) {
         setLoading(false);
@@ -235,9 +236,9 @@ const Job = () => {
         job_title: jobtitle,
         joblisting: joblisting,
         jobposition: jobposition,
-        job_array : jobsData,
-        target_persona : targetPresonaContent,
-        companysize : companySize
+        job_array: jobsData,
+        target_persona: targetPresonaContent,
+        companysize: companySize,
       });
       if (data.error) {
         setLoading(false);
@@ -285,8 +286,7 @@ const Job = () => {
     }
   };
 
-
-const callConnection = async () => {
+  const callConnection = async () => {
     setLoadingMessage("Sending Connection Request...");
     // const linkedin_url = jobsData.map((item) => item.profileUrl);
     let linkedin_url = [];
@@ -354,16 +354,15 @@ const callConnection = async () => {
     }
   };
 
-
   const sendConnectionRqstJob = async () => {
     setLoadingMessage("Sending Connection Request...");
     setLoading(true);
     try {
       await ApiAxiosClient.post(`/v1/send_connection_with_message`, {
         session_cookie: cookieContent,
-        profiles : profiles,
-        problemStatement : problemStatement,
-        productDes : productDes,
+        profiles: profiles,
+        problemStatement: problemStatement,
+        productDes: productDes,
         changes: "No changes",
       });
       toast.success("Connection Requests sent");
@@ -599,10 +598,9 @@ const callConnection = async () => {
         message: connectPeopleContent,
       });
       console.log(data);
-      if(data.response==="Yes" || data.response==="yes"){
+      if (data.response === "Yes" || data.response === "yes") {
         setYesNoContent(data.response);
-      }
-      else{
+      } else {
         setYesNoContent();
       }
       setLoading(false);
@@ -619,11 +617,13 @@ const callConnection = async () => {
     setLoading(true);
     try {
       const { data } = await ApiAxiosClient.post(`/v1/option`, {
-        message: connectionMessageDecisionContent? connectionMessageDecisionContent: connectPeopleContent,
+        message: connectionMessageDecisionContent
+          ? connectionMessageDecisionContent
+          : connectPeopleContent,
       });
 
       console.log(data.response);
-      
+
       if (data.response.toLowerCase() === "yes") {
         setLoading(false);
         setYesNoMessageConnectionContent();
@@ -641,17 +641,18 @@ const callConnection = async () => {
     }
   };
 
-
   const callYesNoMessageForemail = async () => {
     setLoadingMessage("Fetching Data...");
     setLoading(true);
     try {
       const { data } = await ApiAxiosClient.post(`/v1/option`, {
-        message: connectionMessageDecisionContent? connectionMessageDecisionContent: connectPeopleContent,
+        message: connectionMessageDecisionContent
+          ? connectionMessageDecisionContent
+          : connectPeopleContent,
       });
 
       console.log(data.response);
-      
+
       if (data.response.toLowerCase() === "yes") {
         setLoading(false);
         setYesNoMessageConnectionContent();
@@ -788,11 +789,44 @@ const callConnection = async () => {
                   toast.error("Please enter all the details and retry");
                   return;
                 }
-                setPeopleToTargetDisplay(true);
+                setcookieDisplay(true);
               }
             }}
           />
         </>
+
+        {cookieDisplay && (
+          <>
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              Enter your session cookie
+            </Typography>
+            <TextField
+              size="small"
+              sx={{ mt: 1, width: "100%" }}
+              value={cookieContent}
+              onChange={(e) => {
+                setcookieContent(e.target.value);
+              }}
+              // disabled={industriesDisplay}
+              type="password"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  if (
+                    !problemStatement ||
+                    !productDes ||
+                    !jobtitle ||
+                    !jobposition ||
+                    !cookieContent
+                  ) {
+                    toast.error("Please enter all the details and retry");
+                    return;
+                  }
+                  setPeopleToTargetDisplay(true);
+                }
+              }}
+            />
+          </>
+        )}
 
         {peopleToTargetDisplay && (
           <>
@@ -815,7 +849,8 @@ const callConnection = async () => {
                     !productDes ||
                     !jobtitle ||
                     !jobposition ||
-                    !locationContent
+                    !locationContent ||
+                    !cookieContent
                   ) {
                     toast.error("Please enter all the details and retry");
                     return;
@@ -941,7 +976,8 @@ const callConnection = async () => {
                     !productDes ||
                     !locationContent ||
                     !jobtitle ||
-                    !targetPresonaContent
+                    !targetPresonaContent ||
+                    !cookieContent
                   ) {
                     toast.error("Please enter all the details and retry");
                     return;
@@ -956,23 +992,27 @@ const callConnection = async () => {
         {jobsData && (
           <>
             <Typography variant="h6" sx={{ mt: 2 }}>
-              Profiles to Target - {targetPersonaOutput ? targetPersonaOutput : "Please fill the detail and press enter."}
+              Profiles to Target -{" "}
+              {targetPersonaOutput
+                ? targetPersonaOutput
+                : "Please fill the detail and press enter."}
             </Typography>
           </>
         )}
 
-        {jobsData && (
+        {targetPersonaOutput && (
           <FormControl sx={{ mt: 2 }}>
             <Typography variant="h6">Select Company Size</Typography>
             <Select
               value={companySize}
               onChange={(e) => {
                 setCompanySize(e.target.value);
-                setLocationDisplay(true);
+                // setLocationDisplay(true);
                 if (e.target.value === "None") {
                   setcookieDisplay(false);
                 } else {
-                  setcookieDisplay(true);
+                  // setcookieDisplay(true);
+                  // callscrapcompany();
                 }
               }}
               size="small"
@@ -987,37 +1027,12 @@ const callConnection = async () => {
           </FormControl>
         )}
 
-        {cookieDisplay && (
-          <>
-            <Typography variant="h6" sx={{ mt: 2 }}>
-              Enter your session cookie
-            </Typography>
-            <TextField
-              size="small"
-              sx={{ mt: 1, width: "100%" }}
-              value={cookieContent}
-              onChange={(e) => {
-                setcookieContent(e.target.value);
-              }}
-              // disabled={industriesDisplay}
-              type="password"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  if (
-                    !problemStatement ||
-                    !productDes ||
-                    !jobtitle ||
-                    !jobposition ||
-                    !cookieContent
-                  ) {
-                    toast.error("Please enter all the details and retry");
-                    return;
-                  }
-                  callscrapcompany();
-                }
-              }}
-            />
-          </>
+        {companySize!=="None" && (
+          <Box sx={{ mt: 2 }}>
+            <Button variant="contained" onClick={callscrapcompany}>
+              Get Profiles
+            </Button>
+          </Box>
         )}
 
         {profiles && (
@@ -1099,11 +1114,13 @@ const callConnection = async () => {
               })}
             {profiles ? (
               <>
-              <ReactJson
-                src={profiles.map(({ commpanyUrl, companysize, description, ...rest }) => rest)}
-                displayDataTypes={false}
-                theme="monokai"
-              />
+                <ReactJson
+                  src={profiles.map(
+                    ({ commpanyUrl, companysize, description, ...rest }) => rest
+                  )}
+                  displayDataTypes={false}
+                  theme="monokai"
+                />
               </>
             ) : null}
           </Box>
@@ -1190,7 +1207,7 @@ const callConnection = async () => {
           </>
         )}
 
-      {yesNoContent?.toLowerCase() === "yes" && (
+        {yesNoContent?.toLowerCase() === "yes" && (
           <>
             <Typography variant="h6" sx={{ mt: 2 }}>
               Would you like to send an email
@@ -1223,7 +1240,7 @@ const callConnection = async () => {
           </>
         )}
 
-        {emailsfound  && 1>2 && yesNoContent?.toLowerCase() === "yes" && (
+        {emailsfound && 1 > 2 && yesNoContent?.toLowerCase() === "yes" && (
           <>
             <Typography variant="h6" sx={{ mt: 2 }}>
               Auto Generated Connection Message
@@ -1267,69 +1284,72 @@ const callConnection = async () => {
             </Button>
           </>
         )}
-        {generatedEmailSubject && 1>2  && generatedEmailContent && emailsfound && (
-          <>
-            <Box>
-              <Typography variant="h6" sx={{ mt: 2 }}>
-                Auto Generated Email Subject
-              </Typography>
-              <textarea
-                value={generatedEmailSubject}
-                onChange={(e) => {
-                  const text = e.target.value;
-                  setGeneratedEmailSubject(text);
-                }}
-                style={{
-                  marginTop: "10px",
-                  width: "100%",
-                  background: "#121512",
-                  color: "white",
-                  padding: "11px",
-                  borderRadius: "10px",
-                  resize: "none",
-                  fontSize: "0.8rem",
-                  height: "44px",
-                }}
-                cols="2"
-                rows="10"
-              />
-            </Box>
-            <Box>
-              <Typography variant="h6" sx={{ mt: 2 }}>
-                Auto Generated Email Content
-              </Typography>
-              <textarea
-                value={generatedEmailContent}
-                onChange={(e) => {
-                  const text = e.target.value;
-                  setGeneratedEmailContent(text);
-                }}
-                style={{
-                  marginTop: "10px",
-                  width: "100%",
-                  background: "#121512",
-                  color: "white",
-                  padding: "11px",
-                  borderRadius: "10px",
-                  resize: "none",
-                  fontSize: "0.8rem",
-                }}
-                cols="10"
-                rows="10"
-              />
-            </Box>
+        {generatedEmailSubject &&
+          1 > 2 &&
+          generatedEmailContent &&
+          emailsfound && (
+            <>
+              <Box>
+                <Typography variant="h6" sx={{ mt: 2 }}>
+                  Auto Generated Email Subject
+                </Typography>
+                <textarea
+                  value={generatedEmailSubject}
+                  onChange={(e) => {
+                    const text = e.target.value;
+                    setGeneratedEmailSubject(text);
+                  }}
+                  style={{
+                    marginTop: "10px",
+                    width: "100%",
+                    background: "#121512",
+                    color: "white",
+                    padding: "11px",
+                    borderRadius: "10px",
+                    resize: "none",
+                    fontSize: "0.8rem",
+                    height: "44px",
+                  }}
+                  cols="2"
+                  rows="10"
+                />
+              </Box>
+              <Box>
+                <Typography variant="h6" sx={{ mt: 2 }}>
+                  Auto Generated Email Content
+                </Typography>
+                <textarea
+                  value={generatedEmailContent}
+                  onChange={(e) => {
+                    const text = e.target.value;
+                    setGeneratedEmailContent(text);
+                  }}
+                  style={{
+                    marginTop: "10px",
+                    width: "100%",
+                    background: "#121512",
+                    color: "white",
+                    padding: "11px",
+                    borderRadius: "10px",
+                    resize: "none",
+                    fontSize: "0.8rem",
+                  }}
+                  cols="10"
+                  rows="10"
+                />
+              </Box>
 
-            <Button
-              variant="contained"
-              sx={{ mt: 2, px: 4 }}
-              onClick={() => {
-                sendEmail();
-              }}
-            >
-              Send Email
-            </Button>
-          </>
-        )}
+              <Button
+                variant="contained"
+                sx={{ mt: 2, px: 4 }}
+                onClick={() => {
+                  sendEmail();
+                }}
+              >
+                Send Email
+              </Button>
+            </>
+          )}
       </Box>
     </Box>
   );
